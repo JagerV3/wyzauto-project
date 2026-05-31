@@ -52,16 +52,13 @@ func TestIntegrationProductDocumentBuilder(t *testing.T) {
 		t.Fatalf("unexpected Thai product name: %s", doc.ProductName[1].Data)
 	}
 
-	if doc.OilGrade == nil || doc.OilGrade.Code != "5w30" {
-		t.Fatalf("unexpected oil grade: %+v", doc.OilGrade)
+	oilGrade, ok := doc.Dynamic["oil_grade"]
+	if !ok || oilGrade.Code != "5w30" {
+		t.Fatalf("unexpected oil grade: %+v", doc.Dynamic)
 	}
 
-	if doc.OilGrade.Label["en"] != "5W-30" {
-		t.Fatalf("unexpected oil grade label: %+v", doc.OilGrade.Label)
-	}
-
-	if doc.Attributes["oil_grade"] != "5w30" {
-		t.Fatalf("unexpected attributes: %+v", doc.Attributes)
+	if oilGrade.Label["en"] != "5W-30" {
+		t.Fatalf("unexpected oil grade label: %+v", oilGrade.Label)
 	}
 }
 

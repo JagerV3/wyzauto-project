@@ -98,8 +98,6 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 			Code:  product.Brand,
 			Label: labelsFor(translations, domain.EntityTypeProduct, product.Brand, domain.FieldLabel, b.locales),
 		},
-		Description: localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldDescription, b.locales),
-		Remark:      localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldRemark, b.locales),
 		ProductName: localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldProductName, b.locales),
 		Attributes:  map[string]string{},
 		Dynamic:     map[string]domain.AttributeValueDocument{},
@@ -113,9 +111,8 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 
 		doc.Attributes[attribute.Code] = spec.Value
 		valueDoc := domain.AttributeValueDocument{
-			Code:           spec.Value,
-			Label:          labelsFor(translations, domain.EntityTypeProductSpecification, spec.ID, domain.FieldValueLabel, b.locales),
-			AttributeLabel: labelsFor(translations, domain.EntityTypeAttribute, attribute.ID, domain.FieldLabel, b.locales),
+			Code:  spec.Value,
+			Label: labelsFor(translations, domain.EntityTypeProductSpecification, spec.ID, domain.FieldValueLabel, b.locales),
 		}
 
 		if isEmptyLabel(valueDoc.Label) {
@@ -123,9 +120,6 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 		}
 
 		doc.Dynamic[attribute.Code] = valueDoc
-		if attribute.Code == "oil_grade" {
-			doc.OilGrade = &valueDoc
-		}
 	}
 
 	return doc, nil

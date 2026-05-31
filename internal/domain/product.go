@@ -1,5 +1,7 @@
 package domain
 
+import "encoding/json"
+
 type Product struct {
 	ID         string
 	SKU        string
@@ -32,9 +34,8 @@ type ProductNameDocument struct {
 }
 
 type AttributeValueDocument struct {
-	Code           string            `json:"code"`
-	Label          map[string]string `json:"label"`
-	AttributeLabel map[string]string `json:"attribute_label,omitempty"`
+	Code  string            `json:"code"`
+	Label map[string]string `json:"label"`
 }
 
 type ProductDocument struct {
@@ -42,10 +43,24 @@ type ProductDocument struct {
 	SKU         string                            `json:"sku"`
 	PartNumber  string                            `json:"part_number"`
 	Brand       BrandDocument                     `json:"brand"`
-	Description []ProductNameDocument             `json:"description,omitempty"`
-	Remark      []ProductNameDocument             `json:"remark,omitempty"`
 	ProductName []ProductNameDocument             `json:"productname"`
-	OilGrade    *AttributeValueDocument           `json:"oil_grade,omitempty"`
 	Attributes  map[string]string                 `json:"attributes"`
 	Dynamic     map[string]AttributeValueDocument `json:"-"`
+}
+
+func (p ProductDocument) MarshalJSON() ([]byte, error) {
+	base := map[string]any{
+		"uuid":        p.UUID,
+		"sku":         p.SKU,
+		"part_number": p.PartNumber,
+		"brand":       p.Brand,
+		"productname": p.ProductName,
+		"attributes":  p.Attributes,
+	}
+
+	for code, value := range p.Dynamic {
+		base[code] = value
+	}
+
+	return json.Marshal(base)
 }
