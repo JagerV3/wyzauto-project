@@ -1,13 +1,13 @@
-INSERT INTO product (id, sku, name, brand, created_at, updated_at)
+INSERT INTO product (id, sku, part_number, brand, category_id)
 VALUES
-  (1, 'SKU-001', 'Road Tyre', 'WYZauto', NOW(), NOW()),
-  (2, 'SKU-002', 'Sport Tyre', 'WYZauto', NOW(), NOW())
+  ('00000000-0000-0000-0000-000000000001', 'SKU-001', 'PART-001', 'WYZauto', '10000000-0000-0000-0000-000000000001'),
+  ('00000000-0000-0000-0000-000000000002', 'SKU-002', 'PART-002', 'WYZauto', '10000000-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO translation (id, product_id, locale, field_name, value, created_at, updated_at)
+INSERT INTO translation (entity_type, entity_id, locale, field_name, field_value)
 VALUES
-  (1, 1, 'en', 'name', 'Road Tyre', NOW(), NOW()),
-  (2, 1, 'fr', 'name', 'Pneu Route', NOW(), NOW()),
-  (3, 2, 'en', 'name', 'Sport Tyre', NOW(), NOW()),
-  (4, 2, 'fr', 'name', 'Pneu Sport', NOW(), NOW())
-ON CONFLICT (id) DO NOTHING;
+  ('product', '00000000-0000-0000-0000-000000000001', 'en', 'name', 'Road Tyre'),
+  ('product', '00000000-0000-0000-0000-000000000001', 'fr', 'name', 'Pneu Route'),
+  ('product', '00000000-0000-0000-0000-000000000002', 'en', 'name', 'Sport Tyre'),
+  ('product', '00000000-0000-0000-0000-000000000002', 'fr', 'name', 'Pneu Sport')
+ON CONFLICT DO NOTHING;
