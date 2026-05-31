@@ -147,7 +147,7 @@ make setup
 Start PostgreSQL:
 
 ```bash
-make docker-up
+docker compose up -d
 ```
 
 Run the HTTP server:
@@ -162,68 +162,24 @@ Health check:
 curl http://localhost:8080/health
 ```
 
-Build a product document after seeding test data through the integration test or your own SQL:
+## Seed Test Data
+
+The product document endpoint requires product data to exist in PostgreSQL.
+
+For local testing, insert the sample SQL data manually before calling the document endpoint.
+
+Example:
+
+```bash
+psql <your-database-url> -f scripts/seed.sql
+```
+
+Or connect to PostgreSQL and run your insert SQL manually.
+
+## Build Product Document
+
+After the sample product data exists in the database:
 
 ```bash
 curl http://localhost:8080/products/00000000-0000-0000-0000-000000000001/document | jq
 ```
-
-## Commands
-
-Format code:
-
-```bash
-make fmt
-```
-
-Run vet:
-
-```bash
-make vet
-```
-
-Run unit tests:
-
-```bash
-make test-unit
-```
-
-Run integration test:
-
-```bash
-make test-integration
-```
-
-Run full test flow:
-
-```bash
-make test
-```
-
-Run golangci-lint:
-
-```bash
-make lint
-```
-
-Install Git hooks:
-
-```bash
-make hooks
-```
-
-The hooks run formatting, vet, tests, and lint checks where available.
-
-## External Dependencies
-
-Core logic uses only `github.com/jackc/pgx/v5` for PostgreSQL access. No extra runtime dependencies are used.
-
-`golangci-lint` is used as a development tool only.
-
-## What I Would Improve Given More Time
-
-- Add a real Elasticsearch indexing adapter behind an interface.
-- Add a dependency resolver for attribute-level delta sync to find all affected product IDs efficiently.
-- Use a composite delta cursor `(updated_at, id)` or a dedicated change-log table.
-- Add request logging and structured metrics around cache hit rate and sync duration.
-- Add more integration cases for missing translations and partial locale coverage.

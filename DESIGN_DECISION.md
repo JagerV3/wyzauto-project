@@ -17,3 +17,11 @@ The main assumptions are documented in this README:
     - cache invalidation is entity-level, 
     - missing translations should not fail indexing, 
     - delta sync can use updated_at as a cursor with additional safeguards for boundary cases.
+
+## What I Would Improve Given More Time
+
+- Add a real Elasticsearch indexing adapter behind an interface.
+- Add a dependency resolver for attribute-level delta sync to find all affected product IDs efficiently.
+- Use a composite delta cursor `(updated_at, id)` or a dedicated change-log table.
+- Add request logging and structured metrics around cache hit rate and sync duration.
+- Add more integration cases for missing translations and partial locale coverage.
