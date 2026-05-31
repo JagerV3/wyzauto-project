@@ -18,6 +18,11 @@ const (
 	FieldValueLabel  = "value_label"
 )
 
+type TranslationLoadRequest struct {
+	EntityType EntityType
+	EntityIDs  []string
+}
+
 type Translation struct {
 	EntityType EntityType
 	EntityID   string

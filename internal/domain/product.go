@@ -32,8 +32,9 @@ type ProductNameDocument struct {
 }
 
 type AttributeValueDocument struct {
-	Code  string            `json:"code"`
-	Label map[string]string `json:"label"`
+	Code           string            `json:"code"`
+	Label          map[string]string `json:"label"`
+	AttributeLabel map[string]string `json:"attribute_label,omitempty"`
 }
 
 type ProductDocument struct {
@@ -41,6 +42,8 @@ type ProductDocument struct {
 	SKU         string                            `json:"sku"`
 	PartNumber  string                            `json:"part_number"`
 	Brand       BrandDocument                     `json:"brand"`
+	Description []ProductNameDocument             `json:"description,omitempty"`
+	Remark      []ProductNameDocument             `json:"remark,omitempty"`
 	ProductName []ProductNameDocument             `json:"productname"`
 	OilGrade    *AttributeValueDocument           `json:"oil_grade,omitempty"`
 	Attributes  map[string]string                 `json:"attributes"`

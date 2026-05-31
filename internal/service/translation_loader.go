@@ -10,12 +10,12 @@ import (
 )
 
 type TranslationRepository interface {
-	LoadTranslations(ctx context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error)
+	LoadTranslations(ctx context.Context, requests []domain.TranslationLoadRequest, locales []string) (domain.TranslationMap, error)
 	LoadUpdatedSince(ctx context.Context, cursor time.Time, locales []string) ([]domain.Translation, error)
 }
 
 type TranslationLoader interface {
-	Load(ctx context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error)
+	Load(ctx context.Context, requests []domain.TranslationLoadRequest, locales []string) (domain.TranslationMap, error)
 	Invalidate(entityType domain.EntityType, entityID string)
 	LoadUpdatedSince(ctx context.Context, cursor time.Time, locales []string) ([]domain.Translation, error)
 }

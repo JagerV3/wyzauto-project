@@ -55,21 +55,25 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 		attributeByID[attribute.ID] = attribute
 	}
 
-	productTranslations, err := b.translations.Load(ctx, domain.EntityTypeProduct, []string{product.ID, product.Brand}, b.locales)
-	if err != nil {
-		return domain.ProductDocument{}, err
-	}
-
-	attributeTranslations, err := b.translations.Load(ctx, domain.EntityTypeAttribute, attributeIDs, b.locales)
-	if err != nil {
-		return domain.ProductDocument{}, err
-	}
-
 	specIDs := make([]string, 0, len(specs))
 	for _, spec := range specs {
 		specIDs = append(specIDs, spec.ID)
 	}
-	specTranslations, err := b.translations.Load(ctx, domain.EntityTypeProductSpecification, specIDs, b.locales)
+
+	translations, err := b.translations.Load(ctx, []domain.TranslationLoadRequest{
+		{
+			EntityType: domain.EntityTypeProduct,
+			EntityIDs:  []string{product.ID, product.Brand},
+		},
+		{
+			EntityType: domain.EntityTypeAttribute,
+			EntityIDs:  attributeIDs,
+		},
+		{
+			EntityType: domain.EntityTypeProductSpecification,
+			EntityIDs:  specIDs,
+		},
+	}, b.locales)
 	if err != nil {
 		return domain.ProductDocument{}, err
 	}
@@ -80,9 +84,11 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 		PartNumber: product.PartNumber,
 		Brand: domain.BrandDocument{
 			Code:  product.Brand,
-			Label: labelsFor(productTranslations, domain.EntityTypeProduct, product.Brand, domain.FieldLabel, b.locales),
+			Label: labelsFor(translations, domain.EntityTypeProduct, product.Brand, domain.FieldLabel, b.locales),
 		},
-		ProductName: productNamesFor(productTranslations, product.ID, b.locales),
+		Description: localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldDescription, b.locales),
+		Remark:      localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldRemark, b.locales),
+		ProductName: localizedValuesFor(translations, domain.EntityTypeProduct, product.ID, domain.FieldProductName, b.locales),
 		Attributes:  map[string]string{},
 		Dynamic:     map[string]domain.AttributeValueDocument{},
 	}
@@ -95,12 +101,13 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 
 		doc.Attributes[attribute.Code] = spec.Value
 		valueDoc := domain.AttributeValueDocument{
-			Code:  spec.Value,
-			Label: labelsFor(specTranslations, domain.EntityTypeProductSpecification, spec.ID, domain.FieldValueLabel, b.locales),
+			Code:           spec.Value,
+			Label:          labelsFor(translations, domain.EntityTypeProductSpecification, spec.ID, domain.FieldValueLabel, b.locales),
+			AttributeLabel: labelsFor(translations, domain.EntityTypeAttribute, attribute.ID, domain.FieldLabel, b.locales),
 		}
 
 		if isEmptyLabel(valueDoc.Label) {
-			valueDoc.Label = labelsFor(attributeTranslations, domain.EntityTypeAttribute, attribute.ID, domain.FieldLabel, b.locales)
+			valueDoc.Label = labelsFor(translations, domain.EntityTypeAttribute, attribute.ID, domain.FieldLabel, b.locales)
 		}
 
 		doc.Dynamic[attribute.Code] = valueDoc
@@ -112,13 +119,24 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 	return doc, nil
 }
 
-func productNamesFor(translations domain.TranslationMap, productID string, locales []string) []domain.ProductNameDocument {
-	names := make([]domain.ProductNameDocument, 0, len(locales))
+func localizedValuesFor(
+	translations domain.TranslationMap,
+	entityType domain.EntityType,
+	entityID string,
+	fieldName string,
+	locales []string,
+) []domain.ProductNameDocument {
+	values := make([]domain.ProductNameDocument, 0, len(locales))
+
 	for _, locale := range locales {
-		name := translations.ValueWithFallback(domain.EntityTypeProduct, productID, locale, domain.FieldProductName)
-		names = append(names, domain.ProductNameDocument{Locale: locale, Data: name})
+		value := translations.ValueWithFallback(entityType, entityID, locale, fieldName)
+		values = append(values, domain.ProductNameDocument{
+			Locale: locale,
+			Data:   value,
+		})
 	}
-	return names
+
+	return values
 }
 
 func labelsFor(translations domain.TranslationMap, entityType domain.EntityType, entityID string, fieldName string, locales []string) map[string]string {
