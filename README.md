@@ -146,11 +146,16 @@ make setup
 
 Start PostgreSQL:
 
+## Quick Start
 ```bash
 docker compose up -d
+make test
+make run
 ```
 
-Run the HTTP server:
+The database is exposed on port `5433` and schema/seed data are loaded automatically from the `migrations/` directory when the container is created for the first time.
+
+Run the application:
 
 ```bash
 make run
@@ -162,24 +167,50 @@ Health check:
 curl http://localhost:8080/health
 ```
 
-## Seed Test Data
+## Database Initialization
 
-The product document endpoint requires product data to exist in PostgreSQL.
-
-For local testing, insert the sample SQL data manually before calling the document endpoint.
+PostgreSQL automatically executes all SQL files in the `migrations/` directory on first startup.
 
 Example:
 
-```bash
-psql <your-database-url> -f scripts/seed.sql
+```text
+migrations/
+├── 001_schema.sql
+└── 002_seed_data.sql
 ```
 
-Or connect to PostgreSQL and run your insert SQL manually.
+If you need to recreate the database and re-run migrations:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
 
 ## Build Product Document
 
-After the sample product data exists in the database:
+Build Product Document
 
 ```bash
 curl http://localhost:8080/products/00000000-0000-0000-0000-000000000001/document | jq
+```
+## Testing
+
+Run unit tests:
+
+```bash
+make test
+```
+
+Run integration tests:
+
+```bash
+make test-integration
+```
+
+If the database was previously created and you want a clean state:
+
+```bash
+docker compose down -v
+docker compose up -d
+make test
 ```

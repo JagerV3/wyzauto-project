@@ -1,4 +1,4 @@
-DATABASE_URL ?= postgres://wyzauto:wyzauto@localhost:5432/wyzauto?sslmode=disable
+DATABASE_URL ?= postgres://wyzauto:wyzauto@localhost:5433/wyzauto?sslmode=disable
 
 .PHONY: setup fmt vet lint test test-unit test-integration run docker-up docker-down hooks
 
