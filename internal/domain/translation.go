@@ -20,7 +20,7 @@ const (
 
 type TranslationLoadRequest struct {
 	EntityType EntityType
-	EntityIDs  []string
+	EntityID   string
 }
 
 type Translation struct {
