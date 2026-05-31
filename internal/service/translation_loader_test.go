@@ -11,24 +11,27 @@ import (
 
 type fakeTranslationRepository struct {
 	calls        int
-	lastIDs      []string
+	lastRequests []domain.TranslationLoadRequest
 	translations domain.TranslationMap
 	err          error
 }
 
-func (f *fakeTranslationRepository) LoadTranslations(_ context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error) {
+func (f *fakeTranslationRepository) LoadTranslations(
+	_ context.Context,
+	requests []domain.TranslationLoadRequest,
+	locales []string,
+) (domain.TranslationMap, error) {
 	f.calls++
-	f.lastIDs = append([]string(nil), entityIDs...)
+	f.lastRequests = append([]domain.TranslationLoadRequest(nil), requests...)
+
 	if f.err != nil {
 		return nil, f.err
 	}
 
 	result := domain.TranslationMap{}
+
 	for key, value := range f.translations {
-		if key.EntityType != entityType {
-			continue
-		}
-		if contains(entityIDs, key.EntityID) && contains(locales, key.Locale) {
+		if containsRequest(requests, key.EntityType, key.EntityID) && contains(locales, key.Locale) {
 			result[key] = value
 		}
 	}
@@ -44,7 +47,10 @@ func TestTranslationLoaderLoadsTranslationsInBulk(t *testing.T) {
 	repo := &fakeTranslationRepository{translations: sampleTranslations()}
 	loader := NewTranslationLoader(repo, time.Minute)
 
-	result, err := loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1", "p2"}, []string{"en", "th"})
+	result, err := loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+		{EntityType: domain.EntityTypeProduct, EntityID: "p2"},
+	}, []string{"en", "th"})
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
 	}
@@ -53,8 +59,8 @@ func TestTranslationLoaderLoadsTranslationsInBulk(t *testing.T) {
 		t.Fatalf("expected one repository call, got %d", repo.calls)
 	}
 
-	if len(repo.lastIDs) != 2 {
-		t.Fatalf("expected two ids to be loaded in bulk, got %v", repo.lastIDs)
+	if len(repo.lastRequests) != 2 {
+		t.Fatalf("expected two requests to be loaded in bulk, got %v", repo.lastRequests)
 	}
 
 	got := result.ValueWithFallback(domain.EntityTypeProduct, "p1", "th", domain.FieldProductName)
@@ -67,12 +73,16 @@ func TestTranslationLoaderUsesCache(t *testing.T) {
 	repo := &fakeTranslationRepository{translations: sampleTranslations()}
 	loader := NewTranslationLoader(repo, time.Minute)
 
-	_, err := loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1"}, []string{"en"})
+	_, err := loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}, []string{"en"})
 	if err != nil {
 		t.Fatalf("expected first load to succeed: %v", err)
 	}
 
-	_, err = loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1"}, []string{"en"})
+	_, err = loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}, []string{"en"})
 	if err != nil {
 		t.Fatalf("expected second load to succeed: %v", err)
 	}
@@ -86,9 +96,15 @@ func TestTranslationLoaderInvalidatesEntity(t *testing.T) {
 	repo := &fakeTranslationRepository{translations: sampleTranslations()}
 	loader := NewTranslationLoader(repo, time.Minute)
 
-	_, _ = loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1"}, []string{"en"})
+	_, _ = loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}, []string{"en"})
+
 	loader.Invalidate(domain.EntityTypeProduct, "p1")
-	_, _ = loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1"}, []string{"en"})
+
+	_, _ = loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}, []string{"en"})
 
 	if repo.calls != 2 {
 		t.Fatalf("expected cache invalidation to force reload, got %d repository calls", repo.calls)
@@ -99,7 +115,9 @@ func TestTranslationLoaderWrapsRepositoryErrors(t *testing.T) {
 	repo := &fakeTranslationRepository{err: errors.New("database unavailable")}
 	loader := NewTranslationLoader(repo, time.Minute)
 
-	_, err := loader.Load(context.Background(), domain.EntityTypeProduct, []string{"p1"}, []string{"en"})
+	_, err := loader.Load(context.Background(), []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}, []string{"en"})
 	if err == nil {
 		t.Fatal("expected error")
 	}
@@ -129,11 +147,22 @@ func sampleTranslations() domain.TranslationMap {
 	return result
 }
 
+func containsRequest(requests []domain.TranslationLoadRequest, entityType domain.EntityType, entityID string) bool {
+	for _, request := range requests {
+		if request.EntityType == entityType && request.EntityID == entityID {
+			return true
+		}
+	}
+
+	return false
+}
+
 func contains(values []string, target string) bool {
 	for _, value := range values {
 		if value == target {
 			return true
 		}
 	}
+
 	return false
 }

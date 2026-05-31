@@ -32,40 +32,47 @@ func NewTranslationLoader(repo TranslationRepository, ttl time.Duration) *Loader
 	}
 }
 
-func (l *Loader) Load(ctx context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error) {
-	entityIDs = uniqueStrings(entityIDs)
+func (l *Loader) Load(
+	ctx context.Context,
+	requests []domain.TranslationLoadRequest,
+	locales []string,
+) (domain.TranslationMap, error) {
+	requests = uniqueRequests(requests)
 	locales = uniqueStrings(locales)
-	if len(entityIDs) == 0 || len(locales) == 0 {
+
+	if len(requests) == 0 || len(locales) == 0 {
 		return domain.TranslationMap{}, nil
 	}
 
 	result := domain.TranslationMap{}
-	missingIDs := make([]string, 0, len(entityIDs))
+	missingRequests := make([]domain.TranslationLoadRequest, 0, len(requests))
 
-	for _, entityID := range entityIDs {
-		cached, ok := l.cache.Get(entityType, entityID, locales)
+	for _, request := range requests {
+		cached, ok := l.cache.Get(request.EntityType, request.EntityID, locales)
 		if ok {
 			mergeTranslations(result, cached)
 			continue
 		}
-		missingIDs = append(missingIDs, entityID)
+
+		missingRequests = append(missingRequests, request)
 	}
 
-	if len(missingIDs) == 0 {
+	if len(missingRequests) == 0 {
 		return result, nil
 	}
 
-	loaded, err := l.repo.LoadTranslations(ctx, entityType, missingIDs, locales)
+	loaded, err := l.repo.LoadTranslations(ctx, missingRequests, locales)
 	if err != nil {
-		return nil, fmt.Errorf("load translations for %s: %w", entityType, err)
+		return nil, fmt.Errorf("load translations: %w", err)
 	}
 
-	byEntity := groupByEntity(entityType, missingIDs, loaded)
-	for entityID, translations := range byEntity {
-		l.cache.Set(entityType, entityID, locales, translations)
+	byRequest := groupByRequest(missingRequests, loaded)
+	for request, translations := range byRequest {
+		l.cache.Set(request.EntityType, request.EntityID, locales, translations)
 	}
 
 	mergeTranslations(result, loaded)
+
 	return result, nil
 }
 
@@ -86,20 +93,45 @@ func (l *Loader) LoadUpdatedSince(ctx context.Context, cursor time.Time, locales
 	return translations, nil
 }
 
+func uniqueRequests(requests []domain.TranslationLoadRequest) []domain.TranslationLoadRequest {
+	seen := make(map[domain.TranslationLoadRequest]struct{}, len(requests))
+	unique := make([]domain.TranslationLoadRequest, 0, len(requests))
+
+	for _, request := range requests {
+		if request.EntityID == "" {
+			continue
+		}
+
+		if _, ok := seen[request]; ok {
+			continue
+		}
+
+		seen[request] = struct{}{}
+		unique = append(unique, request)
+	}
+
+	return unique
+}
+
 func uniqueStrings(values []string) []string {
 	seen := make(map[string]struct{}, len(values))
 	unique := make([]string, 0, len(values))
+
 	for _, value := range values {
 		if value == "" {
 			continue
 		}
+
 		if _, ok := seen[value]; ok {
 			continue
 		}
+
 		seen[value] = struct{}{}
 		unique = append(unique, value)
 	}
+
 	slices.Sort(unique)
+
 	return unique
 }
 
@@ -109,20 +141,27 @@ func mergeTranslations(dst, src domain.TranslationMap) {
 	}
 }
 
-func groupByEntity(entityType domain.EntityType, entityIDs []string, translations domain.TranslationMap) map[string]domain.TranslationMap {
-	grouped := make(map[string]domain.TranslationMap, len(entityIDs))
-	for _, entityID := range entityIDs {
-		grouped[entityID] = domain.TranslationMap{}
+func groupByRequest(
+	requests []domain.TranslationLoadRequest,
+	translations domain.TranslationMap,
+) map[domain.TranslationLoadRequest]domain.TranslationMap {
+	grouped := make(map[domain.TranslationLoadRequest]domain.TranslationMap, len(requests))
+
+	for _, request := range requests {
+		grouped[request] = domain.TranslationMap{}
 	}
 
 	for key, translation := range translations {
-		if key.EntityType != entityType {
+		request := domain.TranslationLoadRequest{
+			EntityType: key.EntityType,
+			EntityID:   key.EntityID,
+		}
+
+		if _, ok := grouped[request]; !ok {
 			continue
 		}
-		if _, ok := grouped[key.EntityID]; !ok {
-			grouped[key.EntityID] = domain.TranslationMap{}
-		}
-		grouped[key.EntityID][key] = translation
+
+		grouped[request][key] = translation
 	}
 
 	return grouped

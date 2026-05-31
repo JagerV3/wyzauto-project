@@ -60,20 +60,32 @@ func (b *ProductDocumentBuilder) Build(ctx context.Context, productID string) (d
 		specIDs = append(specIDs, spec.ID)
 	}
 
-	translations, err := b.translations.Load(ctx, []domain.TranslationLoadRequest{
+	translationRequests := []domain.TranslationLoadRequest{
 		{
 			EntityType: domain.EntityTypeProduct,
-			EntityIDs:  []string{product.ID, product.Brand},
+			EntityID:   product.ID,
 		},
 		{
+			EntityType: domain.EntityTypeProduct,
+			EntityID:   product.Brand,
+		},
+	}
+
+	for _, attributeID := range attributeIDs {
+		translationRequests = append(translationRequests, domain.TranslationLoadRequest{
 			EntityType: domain.EntityTypeAttribute,
-			EntityIDs:  attributeIDs,
-		},
-		{
+			EntityID:   attributeID,
+		})
+	}
+
+	for _, specID := range specIDs {
+		translationRequests = append(translationRequests, domain.TranslationLoadRequest{
 			EntityType: domain.EntityTypeProductSpecification,
-			EntityIDs:  specIDs,
-		},
-	}, b.locales)
+			EntityID:   specID,
+		})
+	}
+
+	translations, err := b.translations.Load(ctx, translationRequests, b.locales)
 	if err != nil {
 		return domain.ProductDocument{}, err
 	}

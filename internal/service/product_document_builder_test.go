@@ -24,8 +24,13 @@ func (fakeProductRepository) FindAttributesByIDs(_ context.Context, _ []string) 
 
 type fakeTranslationLoader struct{}
 
-func (fakeTranslationLoader) Load(_ context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error) {
+func (fakeTranslationLoader) Load(
+	_ context.Context,
+	requests []domain.TranslationLoadRequest,
+	locales []string,
+) (domain.TranslationMap, error) {
 	result := domain.TranslationMap{}
+
 	add := func(entityType domain.EntityType, entityID, locale, fieldName, value string) {
 		result[domain.TranslationKey{EntityType: entityType, EntityID: entityID, Locale: locale, FieldName: fieldName}] = domain.Translation{
 			EntityType: entityType,
@@ -36,19 +41,19 @@ func (fakeTranslationLoader) Load(_ context.Context, entityType domain.EntityTyp
 		}
 	}
 
-	for _, entityID := range entityIDs {
+	for _, request := range requests {
 		for _, locale := range locales {
 			switch {
-			case entityType == domain.EntityTypeProduct && entityID == "product-1" && locale == "en":
-				add(entityType, entityID, locale, domain.FieldProductName, "5W-30 Engine Oil 1L")
-			case entityType == domain.EntityTypeProduct && entityID == "bosch" && locale == "en":
-				add(entityType, entityID, locale, domain.FieldLabel, "Bosch")
-			case entityType == domain.EntityTypeProduct && entityID == "bosch" && locale == "th":
-				add(entityType, entityID, locale, domain.FieldLabel, "บอช")
-			case entityType == domain.EntityTypeProductSpecification && entityID == "spec-1" && locale == "en":
-				add(entityType, entityID, locale, domain.FieldValueLabel, "5W-30")
-			case entityType == domain.EntityTypeProductSpecification && entityID == "spec-1" && locale == "th":
-				add(entityType, entityID, locale, domain.FieldValueLabel, "5W-30")
+			case request.EntityType == domain.EntityTypeProduct && request.EntityID == "product-1" && locale == "en":
+				add(request.EntityType, request.EntityID, locale, domain.FieldProductName, "5W-30 Engine Oil 1L")
+			case request.EntityType == domain.EntityTypeProduct && request.EntityID == "bosch" && locale == "en":
+				add(request.EntityType, request.EntityID, locale, domain.FieldLabel, "Bosch")
+			case request.EntityType == domain.EntityTypeProduct && request.EntityID == "bosch" && locale == "th":
+				add(request.EntityType, request.EntityID, locale, domain.FieldLabel, "บอช")
+			case request.EntityType == domain.EntityTypeProductSpecification && request.EntityID == "spec-1" && locale == "en":
+				add(request.EntityType, request.EntityID, locale, domain.FieldValueLabel, "5W-30")
+			case request.EntityType == domain.EntityTypeProductSpecification && request.EntityID == "spec-1" && locale == "th":
+				add(request.EntityType, request.EntityID, locale, domain.FieldValueLabel, "5W-30")
 			}
 		}
 	}
