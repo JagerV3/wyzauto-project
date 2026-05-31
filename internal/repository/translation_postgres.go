@@ -18,23 +18,61 @@ func NewTranslationPostgresRepository(pool *pgxpool.Pool) *TranslationPostgresRe
 	return &TranslationPostgresRepository{pool: pool}
 }
 
-func (r *TranslationPostgresRepository) LoadTranslations(ctx context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error) {
-	const query = `
+func (r *TranslationPostgresRepository) LoadTranslations(
+	ctx context.Context,
+	requests []domain.TranslationLoadRequest,
+	locales []string,
+) (domain.TranslationMap, error) {
+	if len(requests) == 0 || len(locales) == 0 {
+		return domain.TranslationMap{}, nil
+	}
+
+	entityTypes := make([]string, 0, len(requests))
+	entityIDs := make([]string, 0, len(requests))
+
+	for _, request := range requests {
+		entityTypes = append(entityTypes, string(request.EntityType))
+		entityIDs = append(entityIDs, request.EntityID)
+	}
+
+	rows, err := r.pool.Query(ctx, `
 		SELECT entity_type, entity_id, locale, field_name, field_value, updated_at
 		FROM translation
-		WHERE entity_type = $1
-		AND entity_id = ANY($2)
-		AND locale = ANY($3)
-		ORDER BY entity_id, locale, field_name`
-
-	rows, err := r.pool.Query(ctx, query, string(entityType), entityIDs, locales)
+		WHERE (entity_type, entity_id) IN (
+			SELECT * FROM UNNEST($1::text[], $2::text[])
+		)
+		AND locale = ANY($3::text[])
+	`, entityTypes, entityIDs, locales)
 	if err != nil {
-		return nil, fmt.Errorf("query translation rows: %w", err)
+		return nil, err
 	}
 	defer rows.Close()
 
-	translations, err := scanTranslations(rows)
-	if err != nil {
+	translations := domain.TranslationMap{}
+
+	for rows.Next() {
+		var translation domain.Translation
+
+		if err := rows.Scan(
+			&translation.EntityType,
+			&translation.EntityID,
+			&translation.Locale,
+			&translation.FieldName,
+			&translation.FieldValue,
+			&translation.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		translations[domain.TranslationKey{
+			EntityType: translation.EntityType,
+			EntityID:   translation.EntityID,
+			Locale:     translation.Locale,
+			FieldName:  translation.FieldName,
+		}] = translation
+	}
+
+	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
