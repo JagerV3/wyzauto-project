@@ -1,35 +1,13 @@
-```sql
-INSERT INTO products (
-    uuid,
-    sku,
-    created_at,
-    updated_at
-) VALUES (
-    '00000000-0000-0000-0000-000000000001',
-    'sample-product',
-    NOW(),
-    NOW()
-)
-ON CONFLICT (uuid) DO NOTHING;
+INSERT INTO product (id, sku, name, brand, created_at, updated_at)
+VALUES
+  (1, 'SKU-001', 'Road Tyre', 'WYZauto', NOW(), NOW()),
+  (2, 'SKU-002', 'Sport Tyre', 'WYZauto', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
 
--- Add translations / product document fields here
--- Example only. Adjust column names based on your schema.
-
-INSERT INTO translations (
-    product_uuid,
-    locale,
-    field_name,
-    value,
-    created_at,
-    updated_at
-) VALUES
-(
-    '00000000-0000-0000-0000-000000000001',
-    'en',
-    'productName',
-    'Sample Product',
-    NOW(),
-    NOW()
-)
-ON CONFLICT DO NOTHING;
-```
+INSERT INTO translation (id, product_id, locale, field_name, value, created_at, updated_at)
+VALUES
+  (1, 1, 'en', 'name', 'Road Tyre', NOW(), NOW()),
+  (2, 1, 'fr', 'name', 'Pneu Route', NOW(), NOW()),
+  (3, 2, 'en', 'name', 'Sport Tyre', NOW(), NOW()),
+  (4, 2, 'fr', 'name', 'Pneu Sport', NOW(), NOW())
+ON CONFLICT (id) DO NOTHING;
