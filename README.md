@@ -7,13 +7,12 @@ The exercise focuses on query efficiency, interface design, cache strategy, erro
 ## Tech Stack
 
 - Go 1.22+
-- `net/http`
+- net/http
 - PostgreSQL
-- `pgxpool`
+- pgxpool
 - Docker Compose
 - Makefile
 - golangci-lint
-- Git pre-commit / pre-push hooks
 
 ## Problem Summary
 

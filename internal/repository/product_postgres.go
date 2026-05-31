@@ -19,9 +19,9 @@ func NewProductPostgresRepository(pool *pgxpool.Pool) *ProductPostgresRepository
 
 func (r *ProductPostgresRepository) FindProduct(ctx context.Context, productID string) (domain.Product, error) {
 	const query = `
-SELECT id::text, sku, part_number, brand, category_id::text
-FROM product
-WHERE id = $1`
+    	SELECT id::text, sku, part_number, brand, category_id::text
+		FROM product
+		WHERE id = $1`
 
 	var product domain.Product
 	if err := r.pool.QueryRow(ctx, query, productID).Scan(
@@ -42,10 +42,10 @@ WHERE id = $1`
 
 func (r *ProductPostgresRepository) FindSpecificationsByProduct(ctx context.Context, productID string) ([]domain.ProductSpecification, error) {
 	const query = `
-SELECT id::text, product_id::text, attribute_id::text, value
-FROM product_specification
-WHERE product_id = $1
-ORDER BY id`
+		SELECT id::text, product_id::text, attribute_id::text, value
+		FROM product_specification
+		WHERE product_id = $1
+		ORDER BY id`
 
 	rows, err := r.pool.Query(ctx, query, productID)
 	if err != nil {
@@ -75,10 +75,10 @@ func (r *ProductPostgresRepository) FindAttributesByIDs(ctx context.Context, att
 	}
 
 	const query = `
-SELECT id::text, code, metric_unit
-FROM attribute
-WHERE id = ANY($1)
-ORDER BY code`
+		SELECT id::text, code, metric_unit
+		FROM attribute
+		WHERE id = ANY($1)
+		ORDER BY code`
 
 	rows, err := r.pool.Query(ctx, query, attributeIDs)
 	if err != nil {

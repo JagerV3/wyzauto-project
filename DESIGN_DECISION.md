@@ -1,4 +1,4 @@
-## Implementation Approach
+## First Approach
 
 - Keep the translation loading responsibility clear, testable, and efficient.
 

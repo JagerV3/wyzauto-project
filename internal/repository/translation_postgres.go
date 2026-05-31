@@ -20,12 +20,12 @@ func NewTranslationPostgresRepository(pool *pgxpool.Pool) *TranslationPostgresRe
 
 func (r *TranslationPostgresRepository) LoadTranslations(ctx context.Context, entityType domain.EntityType, entityIDs []string, locales []string) (domain.TranslationMap, error) {
 	const query = `
-SELECT entity_type, entity_id, locale, field_name, field_value, updated_at
-FROM translation
-WHERE entity_type = $1
-  AND entity_id = ANY($2)
-  AND locale = ANY($3)
-ORDER BY entity_id, locale, field_name`
+		SELECT entity_type, entity_id, locale, field_name, field_value, updated_at
+		FROM translation
+		WHERE entity_type = $1
+		AND entity_id = ANY($2)
+		AND locale = ANY($3)
+		ORDER BY entity_id, locale, field_name`
 
 	rows, err := r.pool.Query(ctx, query, string(entityType), entityIDs, locales)
 	if err != nil {
@@ -43,11 +43,11 @@ ORDER BY entity_id, locale, field_name`
 
 func (r *TranslationPostgresRepository) LoadUpdatedSince(ctx context.Context, cursor time.Time, locales []string) ([]domain.Translation, error) {
 	const query = `
-SELECT entity_type, entity_id, locale, field_name, field_value, updated_at
-FROM translation
-WHERE updated_at > $1
-  AND locale = ANY($2)
-ORDER BY updated_at ASC, entity_type, entity_id`
+		SELECT entity_type, entity_id, locale, field_name, field_value, updated_at
+		FROM translation
+		WHERE updated_at > $1
+		AND locale = ANY($2)
+		ORDER BY updated_at ASC, entity_type, entity_id`
 
 	rows, err := r.pool.Query(ctx, query, cursor, locales)
 	if err != nil {
