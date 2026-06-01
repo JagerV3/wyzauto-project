@@ -136,7 +136,9 @@ The main trade-off is simplicity versus correctness. A timestamp cursor is easy 
 - PostgreSQL is the source of truth; cache is only an optimization.
 - Delta sync uses `updated_at` as a simple cursor, with documented production safeguards.
 
-## Setup
+## Quick Start
+
+Clone the repository and install dependencies:
 
 ```bash
 git clone <your-repo-url>
@@ -146,20 +148,18 @@ make setup
 
 Start PostgreSQL:
 
-## Quick Start
 ```bash
 docker compose up -d
-make test
-make run
 ```
 
-The database is exposed on port `5433` and schema/seed data are loaded automatically from the `migrations/` directory when the container is created for the first time.
-
-Run the application:
+Start the application:
 
 ```bash
-make run
+export DATABASE_URL="postgres://wyzauto:wyzauto@localhost:5433/wyzauto?sslmode=disable"
+go run ./cmd/server
 ```
+
+The database is exposed on port `5433`. Schema and seed data are loaded automatically from the `migrations/` directory when the container is created for the first time.
 
 Health check:
 
@@ -167,50 +167,35 @@ Health check:
 curl http://localhost:8080/health
 ```
 
+## Build Product Document
+
+Example request:
+
+```bash
+curl http://localhost:8080/products/00000000-0000-0000-0000-000000000001/document | jq
+```
+
+## Testing
+
+Run all tests:
+
+```bash
+make test
+```
+
+If you need a clean database state:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
 ## Database Initialization
 
 PostgreSQL automatically executes all SQL files in the `migrations/` directory on first startup.
-
-Example:
 
 ```text
 migrations/
 ├── 001_schema.sql
 └── 002_seed_data.sql
-```
-
-If you need to recreate the database and re-run migrations:
-
-```bash
-docker compose down -v
-docker compose up -d
-```
-
-## Build Product Document
-
-Build Product Document
-
-```bash
-curl http://localhost:8080/products/00000000-0000-0000-0000-000000000001/document | jq
-```
-## Testing
-
-Run unit tests:
-
-```bash
-make test
-```
-
-Run integration tests:
-
-```bash
-make test-integration
-```
-
-If the database was previously created and you want a clean state:
-
-```bash
-docker compose down -v
-docker compose up -d
-make test
 ```
