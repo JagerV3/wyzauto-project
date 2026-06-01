@@ -15,7 +15,7 @@ type Config struct {
 func Load() Config {
 	return Config{
 		HTTPAddr: env("HTTP_ADDR", ":8080"),
-		DBURL:    env("DATABASE_URL", "postgres://wyzauto:wyzauto@localhost:5432/wyzauto?sslmode=disable"),
+		DBURL:    env("DATABASE_URL", "postgres://wyzauto:wyzauto@localhost:5433/wyzauto?sslmode=disable"),
 		CacheTTL: time.Duration(envInt("CACHE_TTL_SECONDS", 300)) * time.Second,
 	}
 }

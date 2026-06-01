@@ -19,7 +19,7 @@ func TestIntegrationProductDocumentBuilder(t *testing.T) {
 	ctx := context.Background()
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
-		dbURL = "postgres://wyzauto:wyzauto@localhost:5432/wyzauto?sslmode=disable"
+		dbURL = "postgres://wyzauto:wyzauto@localhost:5433/wyzauto?sslmode=disable"
 	}
 
 	pool, err := pgxpool.New(ctx, dbURL)
