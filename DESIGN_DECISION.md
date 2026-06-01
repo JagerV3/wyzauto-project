@@ -18,10 +18,9 @@ The main assumptions are documented in this README:
     - missing translations should not fail indexing, 
     - delta sync can use updated_at as a cursor with additional safeguards for boundary cases.
 
-## What I Would Improve Given More Time
 
-- Add a real Elasticsearch indexing adapter behind an interface.
-- Add a dependency resolver for attribute-level delta sync to find all affected product IDs efficiently.
-- Use a composite delta cursor `(updated_at, id)` or a dedicated change-log table.
-- Add request logging and structured metrics around cache hit rate and sync duration.
-- Add more integration cases for missing translations and partial locale coverage.
+## Assumptions
+
+- Brand labels are translated through the translation table using the brand code as the entity identifier.
+- Missing translations fall back to English, then empty string.
+- Cache invalidation is entity-scoped.

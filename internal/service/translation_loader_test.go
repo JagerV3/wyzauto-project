@@ -92,6 +92,29 @@ func TestTranslationLoaderUsesCache(t *testing.T) {
 	}
 }
 
+func TestTranslationLoaderCacheKeySortsLocales(t *testing.T) {
+	repo := &fakeTranslationRepository{translations: sampleTranslations()}
+	loader := NewTranslationLoader(repo, time.Minute)
+
+	requests := []domain.TranslationLoadRequest{
+		{EntityType: domain.EntityTypeProduct, EntityID: "p1"},
+	}
+
+	_, err := loader.Load(context.Background(), requests, []string{"en", "th"})
+	if err != nil {
+		t.Fatalf("expected first load to succeed: %v", err)
+	}
+
+	_, err = loader.Load(context.Background(), requests, []string{"th", "en"})
+	if err != nil {
+		t.Fatalf("expected second load to succeed: %v", err)
+	}
+
+	if repo.calls != 1 {
+		t.Fatalf("expected locale order to use same cache entry, got %d repository calls", repo.calls)
+	}
+}
+
 func TestTranslationLoaderInvalidatesEntity(t *testing.T) {
 	repo := &fakeTranslationRepository{translations: sampleTranslations()}
 	loader := NewTranslationLoader(repo, time.Minute)
